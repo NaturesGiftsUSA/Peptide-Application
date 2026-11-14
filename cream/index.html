@@ -405,6 +405,17 @@ cRefresh();
 window.addEventListener('load',()=>{ if(C.enabled&&hasToken()) sync() });
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&C.enabled&&hasToken()) sync() });
 
+// ===== AUTO-UPDATE =====
+// When a newer version is published, reload to it automatically (phones can hold on to old copies).
+const APP_VERSION='202611141106';
+function checkUpdate(){
+  fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{
+    if(j&&j.v&&j.v!==APP_VERSION){ const u=location.pathname+'?v='+j.v; if(location.search!=='?v='+j.v) location.replace(u) }
+  }).catch(()=>{});
+}
+checkUpdate();
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkUpdate() });
+
 renderCharts(); render();
 </script>
 </body>
