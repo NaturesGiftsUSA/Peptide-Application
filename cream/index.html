@@ -376,6 +376,9 @@ async function sync(){
 function cloudChanged(){
   if(!C.enabled) return;
   C.dirty=true; cSave(); cRefresh();
+  // Google's sign-in lasts about an hour. If it has run out, her tap reconnects right away
+  // (she already said yes once, so the Google window just flashes and closes) and saves.
+  if(!hasToken()){ getToken(sync); return }
   clearTimeout(pushTimer); pushTimer=setTimeout(sync,1200);
 }
 function syncControls(){sd.value=S.start;eL.value=S.eLevel;pL.value=S.pLevel;tD.value=S.tDose||''}
