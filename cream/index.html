@@ -47,9 +47,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,
 .cell.today{outline:2.5px solid var(--ink);outline-offset:-1px}
 .cell.today .date{color:#fff;background:var(--ink);border-radius:999px;display:inline-block;padding:1px 7px}
 .cell.sel:not(.today){background:#efe9f3;border-color:#cdbfd8}
-.cell.day1{border-left:3px solid var(--e)}
-.cell .dot{position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%}
-.cell .dot.full{background:var(--ok)} .cell .dot.half{background:#e2b23c}
+.cell.day1{border-left:3px solid var(--e) !important}
+.cell.full{background:#d6f0e1;border-color:#7cc49d}
+.cell.half{background:#fdf0c8;border-color:#e8c766}
+.cell.full .cd,.cell.half .cd{color:#5a5560}
 .legend{font-size:12px;color:var(--muted);margin:8px 4px 0;display:flex;gap:12px;flex-wrap:wrap}
 .legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
 .detail{background:var(--card);border-radius:18px;padding:16px;border:1px solid var(--line);margin-top:14px}
@@ -106,7 +107,8 @@ th{color:var(--muted);font-weight:600}
   <div class="legend">
     <span><i style="background:var(--e)"></i>E = Estradiol twists</span>
     <span><i style="background:var(--p)"></i>P = Progesterone twists</span>
-    <span><i style="background:var(--ok)"></i>All creams done (E, P &amp; T)</span>
+    <span><i style="background:#7cc49d;border-radius:3px"></i>Green day = all done</span>
+    <span><i style="background:#e8c766;border-radius:3px"></i>Yellow = some done</span>
   </div>
 
   <div class="detail" id="detail"></div>
@@ -178,14 +180,14 @@ let cycStart=null; // first day of the cycle being shown in cycle view
 function curCycleStart(d){const cd=cycleDay(d);return cd?addDays(d,-(cd-1)):parse(S.start)}
 function cell(d,big){
   const dI=iso(d), cd=cycleDay(d), c=document.createElement('div');
-  c.className='cell'+(dI===iso(today)?' today':'')+(dI===iso(sel)?' sel':'')+(cd===null?' out':'')+(cd===1&&big==='date'?' day1':'');
+  let st='';
+  if(cd!==null){const lg=S.log[dI]||{},nd=needed(cd),g=nd.filter(x=>lg[x]).length;st=g?(g===nd.length?' full':' half'):''}
+  c.className='cell'+st+(dI===iso(today)?' today':'')+(dI===iso(sel)?' sel':'')+(cd===null?' out':'')+(cd===1&&big==='date'?' day1':'');
   let h='';
   if(big==='date'){h+='<div class="date">'+d.getDate()+'</div>'+(cd?'<div class="cd">Cycle '+cd+'</div>':'')}
   else{h+='<div class="cdbig">'+cd+'</div><div class="date">'+(d.getMonth()+1)+'/'+d.getDate()+'</div>'}
   if(cd!==null){
     const e=dose(E_ROWS,cd,S.eLevel), p=dose(P_ROWS,cd,S.pLevel), log=S.log[dI]||{};
-    const need=needed(cd), got=need.filter(x=>log[x]).length;
-    if(got) h+='<span class="dot '+(got===need.length?'full':'half')+'"></span>';
     h+='<div class="v"><div class="ev">E '+e+'</div>'+(p?'<div class="pv">P '+p+'</div>':'')+'</div>';
   }
   c.innerHTML=h;
