@@ -19,12 +19,20 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 .wrap{max-width:560px;margin:0 auto;padding:14px 10px}
-.cloud{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:0 4px 12px;font-size:13px;color:var(--muted)}
-.cloud .cdot{width:9px;height:9px;border-radius:50%;background:#bbb;flex:none}
-.cloud .cdot.ok{background:var(--ok)} .cloud .cdot.warn{background:#e2b23c} .cloud .cdot.err{background:#c0392b}
-.cloud span{flex:1}
-.cloud button{border:none;background:var(--ink);color:#fff;border-radius:9px;padding:7px 10px;font-size:13px;font-weight:600;white-space:nowrap}
-.cloud button.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.cloud{display:flex;align-items:center;gap:10px;border-radius:14px;padding:12px 12px;margin:0 4px 12px;font-size:15px;font-weight:600;border:2px solid transparent}
+.cloud .cdot{width:26px;height:26px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:800}
+.cloud span{flex:1;line-height:1.25}
+.cloud span small{display:block;font-weight:500;font-size:12.5px;opacity:.85}
+.cloud button{border:none;background:var(--ink);color:#fff;border-radius:10px;padding:9px 12px;font-size:14px;font-weight:700;white-space:nowrap}
+.cloud.off{background:#fde8e4;border-color:#e98c7a;color:#7a2416} .cloud.off .cdot{background:#d9472b}
+.cloud.off button{background:#d9472b}
+.cloud.ok{background:#dcf2e5;border-color:#7cc49d;color:#1d5a3c} .cloud.ok .cdot{background:var(--ok)}
+.cloud.warn{background:#fdf0c8;border-color:#e8c766;color:#6b4d00} .cloud.warn .cdot{background:#d9a21b}
+.cloud.err{background:#fde8e4;border-color:#e98c7a;color:#7a2416} .cloud.err .cdot{background:#d9472b}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,30px);opacity:0;transition:all .25s;z-index:50;
+  max-width:92%;width:max-content;padding:13px 18px;border-radius:14px;font-size:15px;font-weight:700;color:#fff;box-shadow:0 6px 24px rgba(0,0,0,.2);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.ok{background:var(--ok)} .toast.off{background:#d9472b} .toast.warn{background:#b8860b}
 .seg{display:flex;background:#efe9ed;border-radius:12px;padding:3px;margin:2px 4px 12px}
 .seg button{flex:1;border:none;background:transparent;padding:9px;border-radius:9px;font-size:15px;font-weight:600;color:var(--muted)}
 .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -93,6 +101,7 @@ th{color:var(--muted);font-weight:600}
 <body>
 <div class="wrap">
   <div class="cloud" id="cloud"><i class="cdot" id="cDot"></i><span id="cText"></span><button id="cBtn"></button></div>
+  <div class="toast" id="toast"></div>
   <div class="seg"><button id="vCal">Calendar dates</button><button id="vCyc">Cycle days</button></div>
   <div class="monthbar">
     <h1 id="monthTitle"></h1>
@@ -288,17 +297,19 @@ const hasToken=()=>!!C.token&&Date.now()<C.exp-60000;
 let tokenClient=null, afterToken=null, busy=false, again=false, pushTimer=null;
 
 function cUI(state,text,btn){
-  document.getElementById('cDot').className='cdot '+(state||'');
-  document.getElementById('cText').textContent=text;
-  const b=document.getElementById('cBtn'); b.style.display=btn?'':'none'; if(btn){b.textContent=btn; b.className=state==='ok'?'ghost':''}
+  const st=state||'off';
+  document.getElementById('cloud').className='cloud '+st;
+  document.getElementById('cDot').textContent={ok:'✓',off:'!',err:'!',warn:'…'}[st];
+  document.getElementById('cText').innerHTML=text;
+  const b=document.getElementById('cBtn'); b.style.display=btn?'':'none'; if(btn)b.textContent=btn;
   document.getElementById('acct').style.display=C.enabled?'':'none';
   document.getElementById('acctInfo').textContent=C.enabled?('Signed in as '+(C.email||'Google')+'. Last saved: '+(C.last?new Date(C.last).toLocaleString():'not yet')):'';
 }
 function cRefresh(){
-  if(!C.enabled) return cUI('','Saved on this phone only','Sign in with Google');
-  if(!hasToken()) return cUI('warn','Tap to sync with Google Drive'+(C.dirty?' (unsaved changes)':''),'Sync');
-  if(C.dirty||busy) return cUI('warn','Saving to Google Drive…','');
-  cUI('ok','Saved to Google Drive'+(C.email?' · '+C.email:''),'');
+  if(!C.enabled) return cUI('off','Not signed in<small>Saved on this phone only, not backed up</small>','Sign in');
+  if(!hasToken()) return cUI('warn','Signed in, tap to sync<small>'+(C.dirty?'Unsaved changes waiting':'Reconnect to Google Drive')+'</small>','Sync');
+  if(C.dirty||busy) return cUI('warn','Saving to Google Drive…<small>'+(C.email||'')+'</small>','');
+  cUI('ok','Signed in · backed up<small>'+(C.email||'Google Drive')+'</small>','');
 }
 function initClient(){
   if(tokenClient) return true;
@@ -370,12 +381,18 @@ async function sync(){
   }catch(e){
     busy=false; again=false;
     if(e&&e.auth) return cRefresh();
-    return cUI('err','Couldn’t reach Google Drive. Her checkmarks are still saved on this phone.','Sync');
+    if(wantToast){wantToast=false;toast('warn','Saved on this phone. Will back up when online.')}
+    return cUI('err','Couldn’t reach Google Drive<small>Saved on this phone for now</small>','Sync');
   }
   busy=false; cRefresh();
+  if(wantToast&&!again){wantToast=false;toast('ok','✓ Saved to Google Drive')}
   if(again){again=false;sync()}
 }
+let toastT=null, wantToast=false;
+function toast(kind,msg){const t=document.getElementById('toast');t.className='toast '+kind;t.textContent=msg;void t.offsetWidth;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2800)}
 function cloudChanged(){
+  if(!C.enabled){ toast('off','Saved on this phone only · NOT backed up. Tap Sign in at the top.'); return }
+  wantToast=true;
   if(!C.enabled) return;
   C.dirty=true; cSave(); cRefresh();
   // Google's sign-in lasts about an hour. If it has run out, her tap reconnects right away
