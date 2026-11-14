@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Silvana's Cream Schedule</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Creams">
+<meta name="theme-color" content="#faf7f5">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#faf7f5; --card:#fff; --ink:#2a2230; --muted:#7a7080; --line:#ece6ea;
+  --e:#c4505e; --e-soft:#fbe9eb; --p:#5b2a86; --p-soft:#efe7f6; --ok:#2e7d5b; --t:#9a6b12; --t-soft:#fbf1dc;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.wrap{max-width:560px;margin:0 auto;padding:14px 10px}
+.cloud{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:0 4px 12px;font-size:13px;color:var(--muted)}
+.cloud .cdot{width:9px;height:9px;border-radius:50%;background:#bbb;flex:none}
+.cloud .cdot.ok{background:var(--ok)} .cloud .cdot.warn{background:#e2b23c} .cloud .cdot.err{background:#c0392b}
+.cloud span{flex:1}
+.cloud button{border:none;background:var(--ink);color:#fff;border-radius:9px;padding:7px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+.cloud button.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.seg{display:flex;background:#efe9ed;border-radius:12px;padding:3px;margin:2px 4px 12px}
+.seg button{flex:1;border:none;background:transparent;padding:9px;border-radius:9px;font-size:15px;font-weight:600;color:var(--muted)}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.cyc-mode .cell .date{font-size:11px;font-weight:600;color:var(--muted)}
+.cyc-mode .cell .cdbig{font-size:17px;font-weight:700;line-height:1.1}
+.monthbar{display:flex;align-items:center;justify-content:space-between;margin:4px 4px 10px}
+.monthbar h1{font-size:24px;margin:0;font-weight:700}
+.monthbar .btns{display:flex;gap:6px}
+.monthbar button{border:1px solid var(--line);background:#fff;border-radius:10px;height:38px;min-width:38px;padding:0 10px;font-size:15px;color:var(--ink)}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.wk div{text-align:center;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cell{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:4px 3px 5px;min-height:78px;cursor:pointer;position:relative}
+.cell.blank{background:transparent;border:none;cursor:default}
+.cell.out{background:#f4f0f2}
+.cell .date{font-size:17px;font-weight:700;line-height:1.1}
+.cell .cd{font-size:9.5px;color:var(--muted);margin-top:1px}
+.cell .v{font-size:11px;font-weight:700;margin-top:3px;line-height:1.3}
+.cell .ev{color:var(--e)} .cell .pv{color:var(--p)}
+.cell.today{outline:2.5px solid var(--ink);outline-offset:-1px}
+.cell.today .date{color:#fff;background:var(--ink);border-radius:999px;display:inline-block;padding:1px 7px}
+.cell.sel:not(.today){background:#efe9f3;border-color:#cdbfd8}
+.cell.day1{border-left:3px solid var(--e)}
+.cell .dot{position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%}
+.cell .dot.full{background:var(--ok)} .cell .dot.half{background:#e2b23c}
+.legend{font-size:12px;color:var(--muted);margin:8px 4px 0;display:flex;gap:12px;flex-wrap:wrap}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.detail{background:var(--card);border-radius:18px;padding:16px;border:1px solid var(--line);margin-top:14px}
+.dhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.dhead .dt{font-size:22px;font-weight:700}
+.dhead .cyc{font-size:13px;color:var(--muted);white-space:nowrap}
+.dhead .tag{font-size:12px;font-weight:600;color:#fff;background:var(--ink);border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:middle}
+.dose{border-radius:14px;padding:12px 14px;margin-top:10px}
+.dose.e{background:var(--e-soft)} .dose.p{background:var(--p-soft)}
+.dose .name{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.dose.e .name{color:var(--e)} .dose.p .name{color:var(--p)}
+.dose.t{background:var(--t-soft)} .dose.t .name{color:var(--t)}
+.dose .sub{font-size:14px;color:var(--muted)}
+input[type=text]{width:100%;font-size:16px;padding:10px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+.dose .amt{font-size:26px;font-weight:700;margin:1px 0}
+.dose .amt span{font-size:14px;font-weight:500;color:var(--muted)}
+.dose .none{font-size:17px;color:var(--muted);margin:4px 0 0}
+.checks{display:flex;gap:10px;margin-top:8px}
+.chk{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px;border-radius:12px;border:2px solid transparent;background:#fff;font-size:16px;font-weight:600;color:var(--ink);cursor:pointer}
+.chk .box{width:22px;height:22px;border-radius:6px;border:2px solid #bbb;display:inline-flex;align-items:center;justify-content:center;font-size:15px;color:#fff}
+.chk.done{border-color:var(--ok)} .chk.done .box{background:var(--ok);border-color:var(--ok)}
+.change{font-size:13px;margin-top:8px}
+.msg{color:var(--muted);font-size:15px;margin-top:8px}
+details{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:12px}
+summary{font-weight:600;cursor:pointer}
+label.row{display:block;margin:12px 0 4px;font-size:14px;color:var(--muted)}
+select,input[type=date]{width:100%;font-size:16px;padding:10px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+.btn{display:block;width:100%;margin-top:14px;padding:13px;border-radius:12px;border:none;font-size:16px;font-weight:600;background:var(--ink);color:#fff;cursor:pointer}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.confirm{display:none;margin-top:10px;padding:12px;border-radius:12px;background:#f6f1f8;font-size:14px}
+.confirm .two{display:flex;gap:8px}
+.confirm .two .btn{margin-top:10px}
+.note{font-size:13px;color:var(--muted);margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+th,td{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--muted);font-weight:600}
+.foot{font-size:12px;color:var(--muted);margin:18px 4px 30px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="cloud" id="cloud"><i class="cdot" id="cDot"></i><span id="cText"></span><button id="cBtn"></button></div>
+  <div class="seg"><button id="vCal">Calendar dates</button><button id="vCyc">Cycle days</button></div>
+  <div class="monthbar">
+    <h1 id="monthTitle"></h1>
+    <div class="btns">
+      <button id="prevM" aria-label="Previous">‹</button>
+      <button id="todayBtn">Today</button>
+      <button id="nextM" aria-label="Next">›</button>
+    </div>
+  </div>
+  <div class="wk" id="wk"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
+  <div class="grid" id="grid"></div>
+  <div class="legend">
+    <span><i style="background:var(--e)"></i>E = Estradiol twists</span>
+    <span><i style="background:var(--p)"></i>P = Progesterone twists</span>
+    <span><i style="background:var(--ok)"></i>All creams done (E, P &amp; T)</span>
+  </div>
+
+  <div class="detail" id="detail"></div>
+
+  <details id="settings">
+    <summary>Settings &amp; new cycle</summary>
+    <label class="row" for="startDate">Cycle Day 1 was</label>
+    <input type="date" id="startDate">
+    <button class="btn ghost" id="newCycle">Start a new cycle today (Day 1)</button>
+    <div class="confirm" id="confirmBox">
+      Make today Day 1 of a new cycle?
+      <div class="two">
+        <button class="btn" id="yesNew">Yes, start Day 1</button>
+        <button class="btn ghost" id="noNew">Cancel</button>
+      </div>
+    </div>
+    <div class="note">The calendar repeats the 28-day schedule going forward. If her period starts on a different day, tap “Start a new cycle today” and it re-lines up.</div>
+    <label class="row" for="tDose">Testosterone dose to show (optional, e.g. "1 click")</label>
+    <input type="text" id="tDose" placeholder="Leave blank to just show a checkbox">
+    <label class="row" for="eLevel">Estradiol dose column</label>
+    <select id="eLevel"><option value="2">E initial (30 ml)</option><option value="1">−1E (24 ml)</option><option value="0">−2E (18 ml)</option></select>
+    <label class="row" for="pLevel">Progesterone dose column</label>
+    <select id="pLevel"><option value="2">P initial (21 ml)</option><option value="1">−1P (18 ml)</option><option value="0">−2P (15 ml)</option></select>
+  </details>
+
+  <details id="acct" style="display:none">
+    <summary>Google account</summary>
+    <div class="note" id="acctInfo"></div>
+    <button class="btn ghost" id="signOut">Sign out (keeps her history in Drive)</button>
+  </details>
+
+  <details>
+    <summary>Full dosing chart (from her cards)</summary>
+    <div id="charts"></div>
+  </details>
+
+  <div class="foot">Twists are per application, applied twice daily (AM &amp; PM). Estradiol 0.5 mg/twist · Progesterone 10 mg/twist. Testosterone once daily. Sign in with Google to save her history to her own Google Drive and see it on any device. Questions about the dose itself go to her prescriber or compounding pharmacy.</div>
+</div>
+
+<script>
+// Protocol data, transcribed from the cards. Each row: [fromDay, toDay, -2, -1, initial]
+const E_ROWS=[[1,5,4,6,8],[6,8,8,10,12],[9,10,10,12,14],[11,11,12,14,16],[12,12,20,22,24],[13,13,8,10,12],[14,14,2,2,4],[15,17,2,4,6],[18,28,4,6,8]];
+const P_ROWS=[[1,13,0,0,0],[14,15,2,2,4],[16,17,8,10,12],[18,19,12,14,16],[20,20,16,18,20],[21,21,20,22,24],[22,22,16,18,20],[23,24,14,16,18],[25,26,8,10,12],[27,28,2,2,4]];
+const E_MG=0.5, P_MG=10, CYCLE=28;
+const DEFAULT_START='2026-11-03'; // Day 12 on Sat 11/14/2026
+
+const KEY='wileyTracker.v1';
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
+let S=Object.assign({tDose:'',view:'cal',start:DEFAULT_START,eLevel:2,pLevel:2,log:{}},load());
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function save(){saveLocal();if(typeof cloudChanged==='function')cloudChanged()}
+
+function parse(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+function diffDays(a,b){return Math.round((parse(iso(a))-parse(iso(b)))/864e5)}
+const fmt=(d,o)=>d.toLocaleDateString(undefined,o);
+function dose(rows,day,level){for(const r of rows){if(day>=r[0]&&day<=r[1])return r[2+level]}return null}
+// cycle day 1-28, repeating every 28 days from the start date; null before the start
+function cycleDay(date){const n=diffDays(date,parse(S.start));return n<0?null:(n%CYCLE)+1}
+
+let today=parse(iso(new Date()));
+let sel=today;
+let month=new Date(today.getFullYear(),today.getMonth(),1);
+
+function needed(day){const e=dose(E_ROWS,day,S.eLevel),p=dose(P_ROWS,day,S.pLevel);return [e?'eam':0,e?'epm':0,p?'pam':0,p?'ppm':0,'t'].filter(Boolean)}
+
+let cycStart=null; // first day of the cycle being shown in cycle view
+function curCycleStart(d){const cd=cycleDay(d);return cd?addDays(d,-(cd-1)):parse(S.start)}
+function cell(d,big){
+  const dI=iso(d), cd=cycleDay(d), c=document.createElement('div');
+  c.className='cell'+(dI===iso(today)?' today':'')+(dI===iso(sel)?' sel':'')+(cd===null?' out':'')+(cd===1&&big==='date'?' day1':'');
+  let h='';
+  if(big==='date'){h+='<div class="date">'+d.getDate()+'</div>'+(cd?'<div class="cd">Cycle '+cd+'</div>':'')}
+  else{h+='<div class="cdbig">'+cd+'</div><div class="date">'+(d.getMonth()+1)+'/'+d.getDate()+'</div>'}
+  if(cd!==null){
+    const e=dose(E_ROWS,cd,S.eLevel), p=dose(P_ROWS,cd,S.pLevel), log=S.log[dI]||{};
+    const need=needed(cd), got=need.filter(x=>log[x]).length;
+    if(got) h+='<span class="dot '+(got===need.length?'full':'half')+'"></span>';
+    h+='<div class="v"><div class="ev">E '+e+'</div>'+(p?'<div class="pv">P '+p+'</div>':'')+'</div>';
+  }
+  c.innerHTML=h;
+  c.onclick=()=>{sel=d;render();document.getElementById('detail').scrollIntoView({behavior:'smooth',block:'nearest'})};
+  return c;
+}
+function renderCycle(){
+  if(!cycStart) cycStart=curCycleStart(sel);
+  const end=addDays(cycStart,CYCLE-1);
+  document.getElementById('monthTitle').textContent=fmt(cycStart,{month:'short',day:'numeric'})+' – '+fmt(end,{month:'short',day:'numeric'});
+  const g=document.getElementById('grid'); g.innerHTML='';
+  for(let i=0;i<CYCLE;i++) g.appendChild(cell(addDays(cycStart,i),'cycle'));
+}
+function renderGrid(){
+  const cyc=S.view==='cyc';
+  document.body.classList.toggle('cyc-mode',cyc);
+  document.getElementById('wk').style.display=cyc?'none':'';
+  document.getElementById('vCal').className=cyc?'':'on';
+  document.getElementById('vCyc').className=cyc?'on':'';
+  cyc?renderCycle():renderCalendar();
+}
+function renderCalendar(){
+  document.getElementById('monthTitle').textContent=fmt(month,{month:'long',year:'numeric'});
+  const g=document.getElementById('grid'); g.innerHTML='';
+  const lead=month.getDay(), days=new Date(month.getFullYear(),month.getMonth()+1,0).getDate();
+  for(let i=0;i<lead;i++){const b=document.createElement('div');b.className='cell blank';g.appendChild(b)}
+  for(let n=1;n<=days;n++) g.appendChild(cell(new Date(month.getFullYear(),month.getMonth(),n),'date'));
+}
+
+function renderDetail(){
+  const box=document.getElementById('detail'), sI=iso(sel), cd=cycleDay(sel);
+  let h='<div class="dhead"><div class="dt">'+fmt(sel,{weekday:'long',month:'short',day:'numeric'})+(sI===iso(today)?'<span class="tag">Today</span>':'')+'</div>'+
+        '<div class="cyc">'+(cd?'Cycle day '+cd:'')+'</div></div>';
+  box.innerHTML=h;
+  if(cd===null){box.insertAdjacentHTML('beforeend','<div class="msg">Before her current cycle started.</div>');return}
+  const log=S.log[sI]||{};
+  box.appendChild(doseCard('e','Estradiol',E_ROWS,S.eLevel,E_MG,cd,log));
+  box.appendChild(doseCard('p','Progesterone',P_ROWS,S.pLevel,P_MG,cd,log));
+  const t=document.createElement('div'); t.className='dose t'; const on=log.t;
+  t.innerHTML='<div class="name">Testosterone</div><div class="sub">'+(S.tDose?S.tDose+' · ':'')+'once daily</div>'+
+    '<div class="checks"><button class="chk'+(on?' done':'')+'"><span class="box">'+(on?'✓':'')+'</span>'+(on?'Done':'Mark done')+'</button></div>';
+  t.querySelector('.chk').onclick=()=>{const v=iso(sel);S.log[v]=S.log[v]||{};S.log[v].t=!S.log[v].t;S.log[v]._t=Date.now();save();render()};
+  box.appendChild(t);
+}
+
+function doseCard(k,name,rows,lvl,mg,day,log){
+  const el=document.createElement('div'); el.className='dose '+k;
+  const tw=dose(rows,day,lvl), nxt=dose(rows,day===CYCLE?1:day+1,lvl);
+  let h='<div class="name">'+name+'</div>';
+  if(!tw) h+='<div class="none">None</div>';
+  else{
+    h+='<div class="amt">'+tw+' twists <span>· '+(tw*mg)+' mg · AM &amp; PM</span></div>';
+    h+='<div class="checks">'+['am','pm'].map(t=>{const on=log[k+t];return '<button class="chk'+(on?' done':'')+'" data-k="'+k+t+'"><span class="box">'+(on?'✓':'')+'</span>'+t.toUpperCase()+'</button>'}).join('')+'</div>';
+  }
+  if(nxt!==tw) h+='<div class="change">Next day: <b>'+(nxt?nxt+' twists':'none')+'</b></div>';
+  el.innerHTML=h;
+  el.querySelectorAll('.chk').forEach(b=>b.onclick=()=>{const v=iso(sel);S.log[v]=S.log[v]||{};S.log[v][b.dataset.k]=!S.log[v][b.dataset.k];S.log[v]._t=Date.now();save();render()});
+  return el;
+}
+
+function renderCharts(){
+  const t=(title,rows,col)=>'<p style="margin:12px 0 0;font-weight:700;color:'+col+'">'+title+'</p><table><tr><th>Cycle days</th><th>−2</th><th>−1</th><th>Initial</th></tr>'+
+    rows.map(r=>'<tr><td>'+(r[0]===r[1]?r[0]:r[0]+'–'+r[1])+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td><td><b>'+r[4]+'</b></td></tr>').join('')+'</table>';
+  document.getElementById('charts').innerHTML=t('Estradiol (twists, twice daily)',E_ROWS,'var(--e)')+t('Progesterone (twists, twice daily)',P_ROWS,'var(--p)');
+}
+
+function render(){renderGrid();renderDetail()}
+
+document.getElementById('prevM').onclick=()=>{if(S.view==='cyc'){cycStart=addDays(cycStart,-CYCLE)}else{month=new Date(month.getFullYear(),month.getMonth()-1,1)}renderGrid()};
+document.getElementById('nextM').onclick=()=>{if(S.view==='cyc'){cycStart=addDays(cycStart,CYCLE)}else{month=new Date(month.getFullYear(),month.getMonth()+1,1)}renderGrid()};
+document.getElementById('vCal').onclick=()=>{S.view='cal';month=new Date(sel.getFullYear(),sel.getMonth(),1);save();renderGrid()};
+document.getElementById('vCyc').onclick=()=>{S.view='cyc';cycStart=curCycleStart(sel);save();renderGrid()};
+document.getElementById('todayBtn').onclick=()=>{today=parse(iso(new Date()));sel=today;month=new Date(today.getFullYear(),today.getMonth(),1);cycStart=null;render()};
+const sd=document.getElementById('startDate'); sd.value=S.start;
+sd.onchange=()=>{if(sd.value){S.start=sd.value;S._t=Date.now();cycStart=null;save();render()}};
+const tD=document.getElementById('tDose'); tD.value=S.tDose; tD.oninput=()=>{S.tDose=tD.value.trim();S._t=Date.now();save();renderDetail()};
+const eL=document.getElementById('eLevel'), pL=document.getElementById('pLevel');
+eL.value=S.eLevel; pL.value=S.pLevel;
+eL.onchange=()=>{S.eLevel=+eL.value;S._t=Date.now();save();render()};
+pL.onchange=()=>{S.pLevel=+pL.value;S._t=Date.now();save();render()};
+const cb=document.getElementById('confirmBox');
+document.getElementById('newCycle').onclick=()=>{cb.style.display='block'};
+document.getElementById('noNew').onclick=()=>{cb.style.display='none'};
+document.getElementById('yesNew').onclick=()=>{S.start=iso(new Date());S._t=Date.now();sd.value=S.start;save();cb.style.display='none';document.getElementById('todayBtn').click()};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&iso(new Date())!==iso(today))document.getElementById('todayBtn').click()});
+
+// ===== GOOGLE DRIVE SYNC =====
+// Same Google sign-in as the Peptide app. Her data is saved to a private app folder in HER OWN Google Drive.
+// Without signing in, everything still works and is saved on this phone only.
+const GOOGLE_CLIENT_ID='196719487886-vovam12ajsr0d1ub723ms2s5496m2js3.apps.googleusercontent.com';
+const CLOUD_SCOPE='https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email';
+const CLOUD_FILE='cream-schedule-data.json';
+const CKEY='wileyTracker.cloud.v1';
+let C={enabled:false,email:'',fileId:'',token:'',exp:0,dirty:false,last:''};
+try{Object.assign(C,JSON.parse(localStorage.getItem(CKEY))||{})}catch(e){}
+function cSave(){try{localStorage.setItem(CKEY,JSON.stringify(C))}catch(e){}}
+const hasToken=()=>!!C.token&&Date.now()<C.exp-60000;
+let tokenClient=null, afterToken=null, busy=false, again=false, pushTimer=null;
+
+function cUI(state,text,btn){
+  document.getElementById('cDot').className='cdot '+(state||'');
+  document.getElementById('cText').textContent=text;
+  const b=document.getElementById('cBtn'); b.style.display=btn?'':'none'; if(btn){b.textContent=btn; b.className=state==='ok'?'ghost':''}
+  document.getElementById('acct').style.display=C.enabled?'':'none';
+  document.getElementById('acctInfo').textContent=C.enabled?('Signed in as '+(C.email||'Google')+'. Last saved: '+(C.last?new Date(C.last).toLocaleString():'not yet')):'';
+}
+function cRefresh(){
+  if(!C.enabled) return cUI('','Saved on this phone only','Sign in with Google');
+  if(!hasToken()) return cUI('warn','Tap to sync with Google Drive'+(C.dirty?' (unsaved changes)':''),'Sync');
+  if(C.dirty||busy) return cUI('warn','Saving to Google Drive…','');
+  cUI('ok','Saved to Google Drive'+(C.email?' · '+C.email:''),'');
+}
+function initClient(){
+  if(tokenClient) return true;
+  if(!(window.google&&google.accounts&&google.accounts.oauth2)) return false;
+  tokenClient=google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:CLOUD_SCOPE,
+    callback:r=>{ if(r&&r.access_token){C.token=r.access_token;C.exp=Date.now()+(Number(r.expires_in)||3600)*1000;cSave();const f=afterToken;afterToken=null;f&&f()} else {afterToken=null;cRefresh()} },
+    error_callback:e=>{afterToken=null;cUI('err',(e&&e.type==='popup_failed_to_open')?'Pop-up blocked. Allow pop-ups for this site.':'Google sign-in was cancelled',C.enabled?'Sync':'Sign in with Google')}});
+  return true;
+}
+function getToken(then){
+  if(!initClient()){cUI('err','Google sign-in is still loading. Try again in a moment.',C.enabled?'Sync':'Sign in with Google');return}
+  afterToken=then; const o={prompt:C.email?'':'select_account'}; if(C.email)o.login_hint=C.email;
+  tokenClient.requestAccessToken(o);
+}
+document.getElementById('cBtn').onclick=()=>{
+  if(!C.enabled) return getToken(()=>{C.enabled=true;C.dirty=true;cSave();api('https://www.googleapis.com/oauth2/v3/userinfo').then(r=>r.json()).then(u=>{C.email=u.email||'';cSave()}).catch(()=>{}).then(sync)});
+  if(!hasToken()) return getToken(sync);
+  sync();
+};
+document.getElementById('signOut').onclick=()=>{
+  try{if(C.token&&window.google)google.accounts.oauth2.revoke(C.token,()=>{})}catch(e){}
+  C={enabled:false,email:'',fileId:'',token:'',exp:0,dirty:false,last:''};cSave();cRefresh();
+};
+function api(url,o={}){
+  o.headers=Object.assign({Authorization:'Bearer '+C.token},o.headers||{});
+  return fetch(url,o).then(r=>{ if(r.status===401){C.token='';C.exp=0;cSave();throw {auth:true}} if(!r.ok)throw {status:r.status}; return r });
+}
+// merge two copies: newest settings win; for each day the most recently changed entry wins
+function merge(a,b){
+  const ta=a._t||0, tb=b._t||0, base=tb>ta?b:a;
+  const out=Object.assign({},S,{start:base.start||S.start,eLevel:base.eLevel??S.eLevel,pLevel:base.pLevel??S.pLevel,tDose:base.tDose??'',_t:Math.max(ta,tb),log:{}});
+  const la=a.log||{}, lb=b.log||{};
+  for(const d of new Set([...Object.keys(la),...Object.keys(lb)])){
+    const x=la[d], y=lb[d]; out.log[d]=!x?y:!y?x:((y._t||0)>(x._t||0)?y:x);
+  }
+  return out;
+}
+function payload(){const {view,...rest}=S;return JSON.stringify(Object.assign(rest,{_app:'cream-schedule',_saved:new Date().toISOString()}))}
+async function upload(){
+  const body=payload();
+  if(C.fileId){
+    try{ return await api('https://www.googleapis.com/upload/drive/v3/files/'+C.fileId+'?uploadType=media&fields=id',{method:'PATCH',headers:{'Content-Type':'application/json'},body}) }
+    catch(e){ if(e&&e.status===404){C.fileId=''} else throw e }
+  }
+  const bd='cr'+Date.now(), meta=JSON.stringify({name:CLOUD_FILE,parents:['appDataFolder'],mimeType:'application/json'});
+  const mp='--'+bd+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+meta+'\r\n--'+bd+'\r\nContent-Type: application/json\r\n\r\n'+body+'\r\n--'+bd+'--';
+  const r=await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+bd},body:mp});
+  C.fileId=(await r.json()).id; cSave();
+}
+async function sync(){
+  if(!C.enabled||!hasToken()) return cRefresh();
+  if(busy){again=true;return} busy=true; cRefresh();
+  try{
+    if(!C.fileId){
+      const q=encodeURIComponent("name='"+CLOUD_FILE+"' and trashed=false");
+      const j=await (await api('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q='+q+'&fields=files(id)&orderBy=modifiedTime desc')).json();
+      if(j.files&&j.files[0]){C.fileId=j.files[0].id;cSave()}
+    }
+    if(C.fileId){
+      try{
+        const remote=await (await api('https://www.googleapis.com/drive/v3/files/'+C.fileId+'?alt=media')).json();
+        const m=merge(S,remote), changed=JSON.stringify(m)!==JSON.stringify(S);
+        S=m; saveLocal();
+        if(changed){ syncControls(); render() }
+      }catch(e){ if(e&&e.status===404){C.fileId=''} else throw e }
+    }
+    await upload();
+    C.dirty=false; C.last=new Date().toISOString(); cSave();
+  }catch(e){
+    busy=false; again=false;
+    if(e&&e.auth) return cRefresh();
+    return cUI('err','Couldn’t reach Google Drive. Her checkmarks are still saved on this phone.','Sync');
+  }
+  busy=false; cRefresh();
+  if(again){again=false;sync()}
+}
+function cloudChanged(){
+  if(!C.enabled) return;
+  C.dirty=true; cSave(); cRefresh();
+  clearTimeout(pushTimer); pushTimer=setTimeout(sync,1200);
+}
+function syncControls(){sd.value=S.start;eL.value=S.eLevel;pL.value=S.pLevel;tD.value=S.tDose||''}
+cRefresh();
+window.addEventListener('load',()=>{ if(C.enabled&&hasToken()) sync() });
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&C.enabled&&hasToken()) sync() });
+
+renderCharts(); render();
+</script>
+</body>
+</html>
